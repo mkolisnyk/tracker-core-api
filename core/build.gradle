@@ -1,0 +1,157 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'checkstyle'
+    id 'eclipse'
+    id 'jacoco'
+    id 'java'
+    id 'jvm-test-suite'
+    id 'pmd'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/main/java'
+        }
+        resources {
+            srcDir 'src/main/resources'
+        }
+    }
+    test {
+        java {
+            srcDir 'src/test/java'
+        }
+        resources {
+            srcDir 'src/test/resources'
+        }
+    }
+    integration {
+        java {
+            srcDir 'src/it/java'
+            compileClasspath += project.configurations.compileClasspath + project.configurations.testCompileClasspath + sourceSets.main.output + sourceSets.test.output
+        	runtimeClasspath += project.configurations.runtimeClasspath + project.configurations.testRuntimeClasspath + sourceSets.main.output + sourceSets.test.output
+        }
+        resources {
+            srcDir 'src/it/resources'
+        }
+    }
+}
+
+configurations {
+    integrationImplementation.extendsFrom testImplementation
+    integrationRuntime.extendsFrom testRuntime
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa:3.3.4'
+    implementation 'org.springframework.boot:spring-boot-starter-web:3.3.4'
+    implementation 'org.springframework.boot:spring-boot-starter-tomcat:3.3.4'
+    implementation 'org.springframework.boot:spring-boot-starter-json:3.3.4'
+    implementation 'org.reflections:reflections:0.10.2'
+    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+    implementation 'org.springframework.data:spring-data-commons:3.4.2'
+    implementation 'org.postgresql:postgresql:42.7.5'
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
+    implementation 'org.javassist:javassist:3.30.2-GA'
+    
+
+    runtimeOnly 'com.h2database:h2:2.3.232'
+    testImplementation 'org.junit.platform:junit-platform-suite:1.9.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
+    testImplementation 'org.junit.platform:junit-platform-suite-engine:1.9.0'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:3.3.4'
+    testImplementation 'org.mockito:mockito-core:5.14.1'
+}
+
+test {
+    useJUnitPlatform {
+        includeEngines "junit-jupiter"
+        excludeEngines "junit-vintage"
+        testClassesDirs = testing.suites.test.sources.output.classesDirs
+        classpath = testing.suites.test.sources.runtimeClasspath
+    }
+    testLogging {
+        events "PASSED", "FAILED", "SKIPPED"
+        showStandardStreams = true
+    }
+    jacoco {
+        enabled = true
+        includes = []
+        excludes = ["com.sample.app.model.*", "com.sample.app.Application", "com.sample.app.model.AppController"]
+    }
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    reports {
+        html.outputLocation = layout.buildDirectory.dir('reports/tests/test/jacoco')
+    }
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                     '**/sample/app/model/**/*.*',
+                     '**/sample/app/*.*',
+            ])
+        })
+    }
+    dependsOn test
+    finalizedBy jacocoTestCoverageVerification
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.65
+            }
+        }
+   }
+}
+
+task integrationTest(type: Test) {
+    useJUnitPlatform {
+        includeEngines "junit-jupiter"
+        excludeEngines "junit-vintage"
+        testClassesDirs = testing.suites.test.sources.output.classesDirs + sourceSets.integration.output.classesDirs
+        classpath = testing.suites.test.sources.runtimeClasspath + sourceSets.integration.runtimeClasspath
+    }
+}
+
+checkstyle {
+    project.ext.checkstyleVersion = '8.20'    
+    configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
+}
+
+pmd {
+    consoleOutput = true
+    toolVersion = "7.0.0"
+}
+
+eclipse {
+    classpath {
+        plusConfigurations+=[configurations.integrationCompileClasspath] 
+    } 
+}
+
+tasks.withType(Copy).all { duplicatesStrategy 'exclude' }
+
+jar {
+    manifest {
+        attributes "Main-Class": "com.sample.app.Application"
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
