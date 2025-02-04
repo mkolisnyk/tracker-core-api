@@ -152,10 +152,14 @@ tasks.withType(Copy).all { duplicatesStrategy 'exclude' }
 
 jar {
     manifest {
-        attributes "Main-Class": "com.sample.app.Application"
+        attributes "Main-Class": "com.mkolisnyk.tracker.core.Application"
     }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
+}
+
+release {
+    tagTemplate = 'v${version}'
 }
