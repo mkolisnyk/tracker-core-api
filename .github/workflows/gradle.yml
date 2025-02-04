@@ -39,7 +39,7 @@ jobs:
     needs: build
     if: |
       github.ref == 'refs/heads/main' &&
-      "!contains(github.event.head_commit.message, '[Gradle Release Plugin]')"
+      !contains(github.event.head_commit.message, '[Gradle Release Plugin]')
     runs-on: ubuntu-latest
     permissions:
       contents: read
