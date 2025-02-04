@@ -14,6 +14,7 @@ plugins {
     id 'jvm-test-suite'
     id 'pmd'
     id 'net.researchgate.release' version '3.1.0'
+    id 'info.solidsoft.pitest' version '1.15.0'
 }
 
 sourceSets {
@@ -140,6 +141,14 @@ checkstyle {
 pmd {
     consoleOutput = true
     toolVersion = "7.0.0"
+}
+
+pitest {
+    targetClasses = ['com.mkolisnyk.tracker.core.*']  //by default "${project.group}.*"
+    threads = 4
+    outputFormats = ['XML', 'HTML']
+    timestampedReports = false
+    junit5PluginVersion = '1.2.1'
 }
 
 eclipse {
