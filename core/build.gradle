@@ -88,7 +88,7 @@ test {
     jacoco {
         enabled = true
         includes = []
-        excludes = ["com.sample.app.model.*", "com.sample.app.Application", "com.sample.app.model.AppController"]
+        excludes = ["com.mkolisnyk.tracker.core.Application"]
     }
     finalizedBy jacocoTestReport
 }
@@ -100,7 +100,7 @@ jacocoTestReport {
     afterEvaluate {
         classDirectories = files(classDirectories.files.collect {
             fileTree(dir: it, exclude: [
-                     '**/sample/app/model/**/*.*',
+                     '**/tracker/core/*.*',
                      '**/sample/app/*.*',
             ])
         })
@@ -112,8 +112,10 @@ jacocoTestReport {
 jacocoTestCoverageVerification {
     violationRules {
         rule {
+            element = 'CLASS'
+            excludes = ['com.mkolisnyk.tracker.core.Application']
             limit {
-                minimum = 0.65
+                minimum = 1
             }
         }
    }
